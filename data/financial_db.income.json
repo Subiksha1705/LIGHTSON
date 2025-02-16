@@ -1,0 +1,50 @@
+[{
+  "_id": {
+    "$oid": "6777a5a8893203a491daf9e4"
+  },
+  "name": "Salary",
+  "amount": 5000,
+  "type": "Income",
+  "method": "Bank Transfer",
+  "date": "05/01/2025"
+},
+{
+  "_id": {
+    "$oid": "6777a5a8893203a491daf9e5"
+  },
+  "name": "Freelance Project",
+  "amount": 2000,
+  "type": "Income",
+  "method": "UPI",
+  "date": "05/01/2025"
+},
+{
+  "_id": {
+    "$oid": "6777a5a8893203a491daf9e6"
+  },
+  "name": "Bonus",
+  "amount": 1500,
+  "type": "Income",
+  "method": "Bank Transfer",
+  "date": "05/01/2025"
+},
+{
+  "_id": {
+    "$oid": "6777a5a8893203a491daf9e7"
+  },
+  "name": "Rental Income",
+  "amount": 800,
+  "type": "Income",
+  "method": "Cash",
+  "date": "05/01/2025"
+},
+{
+  "_id": {
+    "$oid": "6777a5a8893203a491daf9e8"
+  },
+  "name": "Dividend",
+  "amount": 600,
+  "type": "Income",
+  "method": "Bank Transfer",
+  "date": "05/01/2025"
+}]

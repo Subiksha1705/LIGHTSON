@@ -1,0 +1,50 @@
+[{
+  "_id": {
+    "$oid": "6777a5d1893203a491daf9f2"
+  },
+  "name": "Stock Investment",
+  "amount": 1000,
+  "type": "Investment",
+  "method": "Broker Account",
+  "date": "05/01/2025"
+},
+{
+  "_id": {
+    "$oid": "6777a5d1893203a491daf9f3"
+  },
+  "name": "Mutual Funds",
+  "amount": 800,
+  "type": "Investment",
+  "method": "Bank Transfer",
+  "date": "05/01/2025"
+},
+{
+  "_id": {
+    "$oid": "6777a5d1893203a491daf9f4"
+  },
+  "name": "Fixed Deposit",
+  "amount": 2000,
+  "type": "Investment",
+  "method": "Bank Transfer",
+  "date": "05/01/2025"
+},
+{
+  "_id": {
+    "$oid": "6777a5d1893203a491daf9f5"
+  },
+  "name": "Real Estate",
+  "amount": 5000,
+  "type": "Investment",
+  "method": "Bank Transfer",
+  "date": "05/01/2025"
+},
+{
+  "_id": {
+    "$oid": "6777a5d1893203a491daf9f6"
+  },
+  "name": "Corporate Bonds",
+  "amount": 1200,
+  "type": "Investment",
+  "method": "Bank Transfer",
+  "date": "05/01/2025"
+}]

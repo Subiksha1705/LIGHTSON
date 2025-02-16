@@ -1,0 +1,5 @@
+npx expo start -c
+npx expo start
+ space:  <Text style={styles.numberText}>   </Text>
+  <View style={{ marginRight:8 }}>
+  mongodb://localhost:27017/myapp

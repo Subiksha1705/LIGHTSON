@@ -1,0 +1,50 @@
+[{
+  "_id": {
+    "$oid": "6777a5bd893203a491daf9eb"
+  },
+  "name": "Groceries",
+  "amount": 250,
+  "type": "Expense",
+  "method": "Credit Card",
+  "date": "05/01/2025"
+},
+{
+  "_id": {
+    "$oid": "6777a5bd893203a491daf9ec"
+  },
+  "name": "Electricity Bill",
+  "amount": 150,
+  "type": "Expense",
+  "method": "Bank Transfer",
+  "date": "05/01/2025"
+},
+{
+  "_id": {
+    "$oid": "6777a5bd893203a491daf9ed"
+  },
+  "name": "Health Insurance",
+  "amount": 300,
+  "type": "Expense",
+  "method": "Cash",
+  "date": "05/01/2025"
+},
+{
+  "_id": {
+    "$oid": "6777a5bd893203a491daf9ee"
+  },
+  "name": "Dining Out",
+  "amount": 120,
+  "type": "Expense",
+  "method": "Credit Card",
+  "date": "05/01/2025"
+},
+{
+  "_id": {
+    "$oid": "6777a5bd893203a491daf9ef"
+  },
+  "name": "Fuel",
+  "amount": 80,
+  "type": "Expense",
+  "method": "UPI",
+  "date": "05/01/2025"
+}]
