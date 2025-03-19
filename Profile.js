@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 
-const ProfilePage = () => {
+const ProfilePage = ({ navigation }) => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.profileHeader}>
@@ -19,6 +19,11 @@ const ProfilePage = () => {
         <Text style={styles.contactText}>Phone: (123) 456-7890</Text>
         <Text style={styles.contactText}>Location: New York, USA</Text>
       </View>
+
+      {/* Button to redirect to Premium */}
+      <TouchableOpacity style={styles.premiumButton} onPress={() => navigation.navigate('Premium')}>
+        <Text style={styles.premiumButtonText}>Go Premium</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -57,6 +62,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 3,
+    marginBottom: 20,
   },
   contactTitle: {
     fontSize: 18,
@@ -68,6 +74,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#555',
     marginBottom: 5,
+  },
+  premiumButton: {
+    backgroundColor: '#007AFF',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  premiumButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
 

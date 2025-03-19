@@ -14,6 +14,7 @@ import Profile from './Profile';
 import Income from './Income';
 import Expenses from './Expenses';
 import Investment from './Investment';
+import PremiumSubscription from './Payement';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -128,6 +129,11 @@ const App = () => {
         <Tab.Screen
           name="Profile"
           component={Profile}
+          options={headerOptions('Profile')}
+        />
+        <Tab.Screen
+          name="Premium"
+          component={PremiumSubscription}
           options={headerOptions('Profile')}
         />
       </Tab.Navigator>

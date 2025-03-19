@@ -1,67 +1,79 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-require('dotenv').config(); // If using environment variables
+require("dotenv").config();
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// MongoDB Connection
-mongoose.connect('mongodb://127.0.0.1:27017/transactionsDB', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error('MongoDB connection error:', err));
+// Connect to MongoDB Atlas
+mongoose.connect("mongodb+srv://subikshapc:dVje83Q4uKgXM6RS@ligths.tncb6.mongodb.net/?retryWrites=true&w=majority&appName=Ligths")
+  .then(() => console.log("✅ Connected to MongoDB Atlas"))
+  .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
 // Transaction Schema
-const transactionSchema = new mongoose.Schema({
-  name: String,
-  amount: Number,
-  type: String, // Expense or Income
-  method: String, // Payment method (Cash, Card, UPI, etc.)
-  date: String,   // Format: YYYY-MM-DD
+const TransactionSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  amount: { type: Number, required: true },
+  type: { type: String, required: true, enum: ["Income", "Investment", "Expense"] },
+  subType: { type: String, required: function() { return this.type === "Expense"; } }, // Required for Expenses
+  method: { type: String, required: true },
+  date: { type: String, required: true },
 });
 
-const Transaction = mongoose.model('Transaction', transactionSchema);
+const Transaction = mongoose.model("Transaction", TransactionSchema);
 
-// Create a new transaction
-app.post('/transactions', async (req, res) => {
+// ✅ API Route to Get All Transactions
+app.get("/transactions", async (req, res) => {
   try {
-    const newTransaction = new Transaction(req.body);
-    await newTransaction.save();
-    res.status(201).json(newTransaction);
-  } catch (error) {
-    console.error('Error saving transaction:', error);
-    res.status(500).json({ error: 'Failed to save transaction' });
-  }
-});
-
-// Get transactions by date
-app.get('/transactions/:date', async (req, res) => {
-  try {
-    const transactions = await Transaction.find({ date: req.params.date });
+    const transactions = await Transaction.find();
     res.json(transactions);
-  } catch (error) {
-    console.error('Error fetching transactions:', error);
-    res.status(500).json({ error: 'Failed to fetch transactions' });
+  } catch (err) {
+    console.error("Error fetching transactions:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-// Delete a transaction
-app.delete('/transactions/:id', async (req, res) => {
+// ✅ API Route to Add Transaction
+app.post("/transactions", async (req, res) => {
   try {
-    const deletedTransaction = await Transaction.findByIdAndDelete(req.params.id);
-    if (!deletedTransaction) {
-      return res.status(404).json({ error: 'Transaction not found' });
+    const { name, amount, type, subType, method, date } = req.body;
+
+    if (!name || !amount || !type || !method || !date) {
+      return res.status(400).json({ error: "All fields are required." });
     }
-    res.json({ message: 'Transaction deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting transaction:', error);
-    res.status(500).json({ error: 'Failed to delete transaction' });
+
+    if (type === "Expense" && !subType) {
+      return res.status(400).json({ error: "SubType is required for Expenses." });
+    }
+
+    const newTransaction = new Transaction({ name, amount, type, subType, method, date });
+    await newTransaction.save();
+    res.status(201).json({ message: "Transaction Added Successfully", transaction: newTransaction });
+  } catch (err) {
+    console.error("Error adding transaction:", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
+// ✅ API Route to Delete Transaction
+app.delete("/transactions/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedTransaction = await Transaction.findByIdAndDelete(id);
+
+    if (!deletedTransaction) {
+      return res.status(404).json({ error: "Transaction not found" });
+    }
+
+    res.json({ message: "Transaction Deleted Successfully", transaction: deletedTransaction });
+  } catch (err) {
+    console.error("Error deleting transaction:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

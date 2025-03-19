@@ -3,3 +3,5 @@ npx expo start
  space:  <Text style={styles.numberText}>   </Text>
   <View style={{ marginRight:8 }}>
   mongodb://localhost:27017/myapp
+  ngrok authtoken 2tXXQxlqxEKsBSacWvBFhgq5N9U_4QF9rV4etpq7vYRDUbBfx
+  ngrok http 5000 

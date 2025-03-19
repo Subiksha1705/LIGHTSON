@@ -1,0 +1,3 @@
+dVje83Q4uKgXM6RS
+subikshapc
+mongodb+srv://subikshapc:dVje83Q4uKgXM6RS@ligths.tncb6.mongodb.net/?retryWrites=true&w=majority&appName=Ligths
