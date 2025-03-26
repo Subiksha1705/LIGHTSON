@@ -26,7 +26,7 @@ const CalendarMain = () => {
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
-        const response = await fetch(`https://1fc4-2409-40f4-3010-44db-483-9915-3dd2-2826.ngrok-free.app/transactions`);
+        const response = await fetch(`https://bb50-2409-40f4-301f-ffe3-7d02-6711-ac9c-fb39.ngrok-free.app/transactions/${username}`);
         const text = await response.text();
         console.log("Raw Response:", text);
 

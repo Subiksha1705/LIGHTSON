@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
-const API_URL = "https://1fc4-2409-40f4-3010-44db-483-9915-3dd2-2826.ngrok-free.app";
+const API_URL = "https://bb50-2409-40f4-301f-ffe3-7d02-6711-ac9c-fb39.ngrok-free.app";
 
 export default function ExpenseTracker() {
   const [transactions, setTransactions] = useState([]);
@@ -37,7 +37,7 @@ export default function ExpenseTracker() {
   // ✅ Fetch Transactions from MongoDB
   const fetchTransactions = async () => {
     try {
-      const response = await fetch(`${API_URL}/transactions`);
+      const response = await fetch(`${API_URL}/transactions/${username}`);
       if (!response.ok) throw new Error("Failed to fetch transactions");
       const data = await response.json();
       setTransactions(data);

@@ -1,19 +1,60 @@
-import { Image, StyleSheet, View, TouchableOpacity, Text, Alert } from "react-native";
-import Logo from "./assets/Logo.png";
-import Splash from "./assets/splash.png";
+import React, { useEffect, useState } from "react";
+import { 
+  Image, 
+  StyleSheet, 
+  View, 
+  TouchableOpacity, 
+  Text, 
+  Alert, 
+  ActivityIndicator 
+} from "react-native";
 
-export default function SplashScreen({navigation}) {
+import { useNavigation } from "@react-navigation/native";
+
+// Import Images
+const Logo = require("./assets/logo.png");
+const Splash = require("./assets/splash.png");
+
+export default function SplashScreen() {
+  const navigation = useNavigation();
+  const [loading, setLoading] = useState(true);
+  const [transactions, setTransactions] = useState([]);
+
+  // Replace with your ngrok URL
+  const API_URL = "https://bb50-2409-40f4-301f-ffe3-7d02-6711-ac9c-fb39.ngrok-free.app";
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
+
+  const fetchTransactions = async () => {
+    try {
+      const response = await fetch(API_URL);
+      const data = await response.json();
+      setTransactions(data);
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      Alert.alert("Error", "Failed to load transactions.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Image source={Logo} style={styles.logo} />
       <Image source={Splash} style={styles.splash} />
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => navigation.navigate("Login")}
-      >
-        <Text style={styles.buttonText}>GET STARTED</Text>
-        
-      </TouchableOpacity>
+
+      {loading ? (
+        <ActivityIndicator size="large" color="#4B8CA9" />
+      ) : (
+        <TouchableOpacity 
+          style={styles.button} 
+          onPress={() => navigation.navigate("Login")}
+        >
+          <Text style={styles.buttonText}>GET STARTED</Text>
+        </TouchableOpacity>
+      )}
+
       <Text style={styles.title}>
         <Text style={styles.firstLetter}>L</Text>earn,{" "}
         <Text style={styles.greenLetter}>I</Text>nvest &{"\n"}
@@ -28,7 +69,6 @@ export default function SplashScreen({navigation}) {
 
 const styles = StyleSheet.create({
   container: {
-    fontFamily: "Roboto_400Regular",
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
@@ -50,9 +90,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffff",
     paddingVertical: 14,
     paddingHorizontal: 60,
-    borderWidth:2,
+    borderWidth: 2,
     borderRadius: 15,
-    borderColor:"#4B8CA9",
+    borderColor: "#4B8CA9",
   },
   buttonText: {
     color: "#4B8CA9",
@@ -61,20 +101,20 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   title: {
-    fontWeight:"bold",
+    fontWeight: "bold",
     fontSize: 24,
-    color: "#515151", 
+    color: "#515151",
     textAlign: "center",
     marginVertical: 20,
-    marginTop:30,
+    marginTop: 30,
   },
   firstLetter: {
-    color: "#4B8CA9", 
+    color: "#4B8CA9",
   },
   greenLetter: {
-    color:"#34A853",
+    color: "#34A853",
   },
-  redLetter:{
+  redLetter: {
     color: "#EB4335",
-  }
+  },
 });

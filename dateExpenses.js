@@ -1,9 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, Alert } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  Alert,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AntDesign } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 
-const API_URL = "https://1fc4-2409-40f4-3010-44db-483-9915-3dd2-2826.ngrok-free.app"; // Replace with your actual ngrok URL
+const API_URL = "https://bb50-2409-40f4-301f-ffe3-7d02-6711-ac9c-fb39.ngrok-free.app";
 
 const formatDate = (dateString) => {
   const [year, month, day] = dateString.split("-");
@@ -28,43 +38,82 @@ const TransactionsPage = ({ route }) => {
     fetchTransactions();
   }, [selectedDate]);
 
+  // Fetch Transactions
   const fetchTransactions = async () => {
     try {
-      const response = await fetch(`${API_URL}/transactions`);
+      const userInfo = await AsyncStorage.getItem("userInfo");
+      if (!userInfo) {
+        alert("User not logged in. Please log in again.");
+        return;
+      }
+      const parsedInfo = JSON.parse(userInfo);
+      const username = parsedInfo.userName;
+
+      const response = await fetch(`${API_URL}/transactions/${username}`);
       const data = await response.json();
-      const filteredData = data.filter((transaction) => transaction.date === selectedDate);
+
+      // Filter transactions by selected date
+      const filteredData = data.filter(
+        (transaction) => transaction.date === selectedDate
+      );
       setTransactions(filteredData);
     } catch (error) {
       console.error("Error fetching transactions:", error);
     }
   };
 
+  // Add Transaction
   const addTransaction = async () => {
-    if (!newTransaction.name || !newTransaction.amount || !newTransaction.type || !newTransaction.method) {
+    if (
+      !newTransaction.name ||
+      !newTransaction.amount ||
+      !newTransaction.type ||
+      !newTransaction.method
+    ) {
       alert("Please fill out all fields.");
       return;
     }
 
     try {
-      const response = await fetch(`${API_URL}/transactions`, {
+      const userInfo = await AsyncStorage.getItem("userInfo");
+      if (!userInfo) {
+        alert("User not logged in. Please log in again.");
+        return;
+      }
+      const parsedInfo = JSON.parse(userInfo);
+      console.log(userInfo);
+      const username = parsedInfo.username;
+
+   
+      const response = await fetch(`${API_URL}/transactions/${username}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newTransaction),
       });
-
+       
       const result = await response.json();
+
       if (response.ok) {
         setTransactions([...transactions, result.transaction]);
-        setNewTransaction({ name: "", amount: "", type: "", subType: "", method: "", date: selectedDate });
+        setNewTransaction({
+          name: "",
+          amount: "",
+          type: "",
+          subType: "",
+          method: "",
+          date: selectedDate,
+        });
         setModalVisible(false);
       } else {
-        alert(result.error);
+        alert(result.error || "Error adding transaction.");
       }
     } catch (error) {
       console.error("Error adding transaction:", error);
+      alert("Error adding transaction. Please try again.");
     }
   };
 
+  // Delete Transaction
   const deleteTransaction = async (id) => {
     Alert.alert("Delete Transaction", "Are you sure you want to delete this transaction?", [
       { text: "Cancel", style: "cancel" },
@@ -72,9 +121,22 @@ const TransactionsPage = ({ route }) => {
         text: "Delete",
         onPress: async () => {
           try {
-            const response = await fetch(`${API_URL}/transactions/${id}`, { method: "DELETE" });
+            const userInfo = await AsyncStorage.getItem("userInfo");
+            if (!userInfo) {
+              alert("User not logged in. Please log in again.");
+              return;
+            }
+            const parsedInfo = JSON.parse(userInfo);
+            const username = parsedInfo.userName;
+
+            const response = await fetch(`${API_URL}/transactions/${username}/${id}`, {
+              method: "DELETE",
+            });
+
             if (response.ok) {
               setTransactions(transactions.filter((transaction) => transaction._id !== id));
+            } else {
+              alert("Error deleting transaction.");
             }
           } catch (error) {
             console.error("Error deleting transaction:", error);
@@ -84,7 +146,10 @@ const TransactionsPage = ({ route }) => {
     ]);
   };
 
-  const filteredTransactions = transactions.filter((transaction) => filter === "All" || transaction.type === filter);
+  // Filter Transactions
+  const filteredTransactions = transactions.filter(
+    (transaction) => filter === "All" || transaction.type === filter
+  );
 
   return (
     <View style={styles.container}>
@@ -112,7 +177,9 @@ const TransactionsPage = ({ route }) => {
         renderItem={({ item }) => (
           <View style={styles.transactionItem}>
             <Text style={styles.transactionName}>{item.name}</Text>
-            <Text style={styles.transactionDetails}>{item.method} - {formatDate(item.date)}</Text>
+            <Text style={styles.transactionDetails}>
+              {item.method} - {formatDate(item.date)}
+            </Text>
             <View style={styles.transactionActions}>
               <Text
                 style={
@@ -134,21 +201,47 @@ const TransactionsPage = ({ route }) => {
       />
 
       {/* Add Transaction Button */}
-      <TouchableOpacity style={styles.addTransactionButton} onPress={() => setModalVisible(true)}>
+      <TouchableOpacity
+        style={styles.addTransactionButton}
+        onPress={() => setModalVisible(true)}
+      >
         <AntDesign name="plus" size={24} color="white" />
       </TouchableOpacity>
 
       {/* Add Transaction Modal */}
-      <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setModalVisible(false)}
+      >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalHeader}>Add Transaction</Text>
 
-            <TextInput style={styles.input} placeholder="Transaction Name" value={newTransaction.name} onChangeText={(text) => setNewTransaction({ ...newTransaction, name: text })} />
-            <TextInput style={styles.input} placeholder="Amount" keyboardType="numeric" value={newTransaction.amount} onChangeText={(text) => setNewTransaction({ ...newTransaction, amount: text })} />
+            <TextInput
+              style={styles.input}
+              placeholder="Transaction Name"
+              value={newTransaction.name}
+              onChangeText={(text) => setNewTransaction({ ...newTransaction, name: text })}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Amount"
+              keyboardType="numeric"
+              value={newTransaction.amount}
+              onChangeText={(text) =>
+                setNewTransaction({ ...newTransaction, amount: text })
+              }
+            />
 
             {/* Payment Method Dropdown */}
-            <Picker selectedValue={newTransaction.method} onValueChange={(itemValue) => setNewTransaction({ ...newTransaction, method: itemValue })}>
+            <Picker
+              selectedValue={newTransaction.method}
+              onValueChange={(itemValue) =>
+                setNewTransaction({ ...newTransaction, method: itemValue })
+              }
+            >
               <Picker.Item label="Select Payment Method" value="" />
               <Picker.Item label="Cash" value="Cash" />
               <Picker.Item label="Credit Card" value="Credit Card" />
@@ -157,7 +250,16 @@ const TransactionsPage = ({ route }) => {
             </Picker>
 
             {/* Transaction Type Dropdown */}
-            <Picker selectedValue={newTransaction.type} onValueChange={(itemValue) => setNewTransaction({ ...newTransaction, type: itemValue, subType: "" })}>
+            <Picker
+              selectedValue={newTransaction.type}
+              onValueChange={(itemValue) =>
+                setNewTransaction({
+                  ...newTransaction,
+                  type: itemValue,
+                  subType: "",
+                })
+              }
+            >
               <Picker.Item label="Select Type" value="" />
               <Picker.Item label="Income" value="Income" />
               <Picker.Item label="Investment" value="Investment" />
@@ -166,14 +268,24 @@ const TransactionsPage = ({ route }) => {
 
             {/* SubType Dropdown */}
             {newTransaction.type === "Income" && (
-              <Picker selectedValue={newTransaction.subType} onValueChange={(itemValue) => setNewTransaction({ ...newTransaction, subType: itemValue })}>
+              <Picker
+                selectedValue={newTransaction.subType}
+                onValueChange={(itemValue) =>
+                  setNewTransaction({ ...newTransaction, subType: itemValue })
+                }
+              >
                 <Picker.Item label="Active" value="Active" />
                 <Picker.Item label="Passive" value="Passive" />
               </Picker>
             )}
 
             {newTransaction.type === "Expense" && (
-              <Picker selectedValue={newTransaction.subType} onValueChange={(itemValue) => setNewTransaction({ ...newTransaction, subType: itemValue })}>
+              <Picker
+                selectedValue={newTransaction.subType}
+                onValueChange={(itemValue) =>
+                  setNewTransaction({ ...newTransaction, subType: itemValue })
+                }
+              >
                 <Picker.Item label="Discretionary" value="Discretionary" />
                 <Picker.Item label="Essential" value="Essential" />
                 <Picker.Item label="Mandatory" value="Mandatory" />
@@ -184,7 +296,10 @@ const TransactionsPage = ({ route }) => {
             <TouchableOpacity style={styles.addButton} onPress={addTransaction}>
               <Text style={styles.addButtonText}>Add</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => setModalVisible(false)}
+            >
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -301,31 +416,26 @@ const styles = StyleSheet.create({
     padding: 20,
     elevation: 10,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
   },
   modalHeader: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "bold",
-    marginBottom: 20,
+    marginBottom: 12,
     textAlign: "center",
-    color: "#007AFF",
   },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
+    padding: 10,
     borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    fontSize: 16,
+    marginVertical: 8,
   },
   addButton: {
     backgroundColor: "#007AFF",
     paddingVertical: 12,
     borderRadius: 8,
-    marginTop: 10,
     alignItems: "center",
+    marginVertical: 8,
   },
   addButtonText: {
     color: "white",
@@ -333,14 +443,14 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   cancelButton: {
-    backgroundColor: "#ccc",
+    backgroundColor: "#FF3B30",
     paddingVertical: 12,
     borderRadius: 8,
-    marginTop: 10,
     alignItems: "center",
+    marginVertical: 8,
   },
   cancelButtonText: {
-    color: "#333",
+    color: "white",
     fontSize: 16,
     fontWeight: "bold",
   },

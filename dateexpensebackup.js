@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, TextInput, A
 import { AntDesign } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 
-const API_URL = "https://1fc4-2409-40f4-3010-44db-483-9915-3dd2-2826.ngrok-free.app"; // Replace with your actual ngrok URL
+const API_URL = "https://bb50-2409-40f4-301f-ffe3-7d02-6711-ac9c-fb39.ngrok-free.app"; // Replace with your actual ngrok URL
 
 const formatDate = (dateString) => {
   const [year, month, day] = dateString.split("-");

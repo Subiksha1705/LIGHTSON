@@ -6,6 +6,9 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Animated, Easing, StyleSheet, Image, View, Text } from 'react-native';
 
 // Screens
+import SplashScreen from './SplashScreen';
+import LoginScreenView from './LoginScreenView';
+import RegisterScreenView from './RegisterScreen';
 import CalendarMain from './calendarmain';
 import DateExpenses from './dateExpenses';
 import FireNumber from './FireNumber';
@@ -30,7 +33,7 @@ const getTabBarIcon = (route, color, size) => {
 };
 
 const CalendarStack = () => (
-  <Stack.Navigator initialRouteName="CalendarMain">
+  <Stack.Navigator>
     <Stack.Screen
       name="CalendarMain"
       component={CalendarMain}
@@ -82,7 +85,7 @@ const headerOptions = (title) => ({
   headerStyle: { elevation: 0, borderBottomWidth: 0 },
 });
 
-const App = () => {
+const MainApp = () => {
   const tabAnimationValue = React.useRef(new Animated.Value(0)).current;
 
   const handleTabChange = (index) => {
@@ -95,48 +98,77 @@ const App = () => {
   };
 
   return (
+    <Tab.Navigator
+      initialRouteName="Calendar"
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ color, size }) => getTabBarIcon(route, color, size),
+        tabBarActiveTintColor: '#007AFF',
+        tabBarInactiveTintColor: 'gray',
+        tabBarStyle: [
+          styles.tabBar,
+          { transform: [{ translateY: tabAnimationValue }] },
+        ],
+      })}
+      screenListeners={{
+        state: (e) => handleTabChange(e.data.state.index),
+      }}
+    >
+      <Tab.Screen
+        name="Calendar"
+        component={CalendarStack}
+        options={{ headerShown: false }}
+      />
+      <Tab.Screen
+        name="FireNumber"
+        component={FireNumber}
+        options={headerOptions('Fire Number')}
+      />
+      <Tab.Screen
+        name="Simulator"
+        component={Simulator}
+        options={headerOptions('Simulator')}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={Profile}
+        options={headerOptions('Profile')}
+      />
+      <Tab.Screen
+        name="Premium"
+        component={PremiumSubscription}
+        options={headerOptions('Profile')}
+      />
+    </Tab.Navigator>
+  );
+};
+
+const App = () => {
+  return (
     <NavigationContainer>
-      <Tab.Navigator
-        initialRouteName="Calendar"
-        screenOptions={({ route }) => ({
-          tabBarIcon: ({ color, size }) => getTabBarIcon(route, color, size),
-          tabBarActiveTintColor: '#007AFF',
-          tabBarInactiveTintColor: 'gray',
-          tabBarStyle: [
-            styles.tabBar,
-            { transform: [{ translateY: tabAnimationValue }] },
-          ],
-        })}
-        screenListeners={{
-          state: (e) => handleTabChange(e.data.state.index),
-        }}
-      >
-        <Tab.Screen
-          name="Calendar"
-          component={CalendarStack}
+      <Stack.Navigator initialRouteName="SplashScreen">
+        <Stack.Screen
+          name="SplashScreen"
+          component={SplashScreen}
           options={{ headerShown: false }}
         />
-        <Tab.Screen
-          name="FireNumber"
-          component={FireNumber}
-          options={headerOptions('Fire Number')}
+        <Stack.Screen
+          name="Login"
+          component={LoginScreenView}
+          options={{ headerShown: false }}
         />
-        <Tab.Screen
-          name="Simulator"
-          component={Simulator}
-          options={headerOptions('Simulator')}
+
+        <Stack.Screen
+          name="SignUp"
+          component={RegisterScreenView}
+          options={{ headerShown: false }}
         />
-        <Tab.Screen
-          name="Profile"
-          component={Profile}
-          options={headerOptions('Profile')}
+        
+        <Stack.Screen
+          name="MainApp"
+          component={MainApp}
+          options={{ headerShown: false }}
         />
-        <Tab.Screen
-          name="Premium"
-          component={PremiumSubscription}
-          options={headerOptions('Profile')}
-        />
-      </Tab.Navigator>
+      </Stack.Navigator>
     </NavigationContainer>
   );
 };
