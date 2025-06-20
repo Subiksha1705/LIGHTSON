@@ -21,7 +21,7 @@
 - **Backend:** Node.js + Express
 - **Database:** MongoDB Atlas
 - **Visualization:** React Native Pie Chart
-- 
+
 ### Prerequisites
 - Node.js
 - Expo CLI
