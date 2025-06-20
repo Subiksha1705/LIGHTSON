@@ -4,13 +4,6 @@
 
 ---
 
-## 📲 APK Download
-
-👉 [Download LIGHTSON.apk](https://github.com/your-username/lightson/releases)  
-*(Make sure to upload the `.apk` file under GitHub → Releases and update this link)*
-
----
-
 ## ✨ Features
 
 - ✅ Daily Expense Tracking — Add, view, and manage your day-to-day spending.
