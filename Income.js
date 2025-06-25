@@ -7,11 +7,13 @@ import {
   TouchableOpacity,
   FlatList,
   Modal,
-  StyleSheet,
+  StyleSheet, 
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = "https://bb50-2409-40f4-301f-ffe3-7d02-6711-ac9c-fb39.ngrok-free.app";
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 export default function ExpenseTracker() {
   const [transactions, setTransactions] = useState([]);
@@ -29,27 +31,61 @@ export default function ExpenseTracker() {
   const [customExpenseName, setCustomExpenseName] = useState("");
 
   const expenseTypeOptions = {
-    Active: ["Investments", "Business", "Freelancing", "Stock Trading", "Side Hustle"],
-    Passive: ["Rent Income", "Dividends", "Royalties", "Interest Income", "Affiliate Marketing"],
+    Active: ["Bonuses", "Freelancing", "Loans", "Refunds/Reimbursements", "Salary"],
+    Passive: ["Capital gains", "Dividends", "Financial Aid", "Income - Business", "Income - Chit", "Income - Interest"],
   };
 
-  const fetchTransactions = async () => {
-    try {
-      const response = await fetch(`${API_URL}/transactions/${username}`);
-      if (!response.ok) throw new Error("Failed to fetch transactions");
-      const data = await response.json();
-      setTransactions(data);
-    } catch (error) {
-      console.error(error);
-      alert("Error fetching transactions");
-    }
-  };
+  
 
   useEffect(() => {
     fetchTransactions();
   }, []);
 
-  const addTransaction = async () => {
+
+    // 📚 Fetch Transactions
+const fetchTransactions = async () => {
+  try {
+    const userInfo = await AsyncStorage.getItem("userInfo");
+      //console.log("📦 Retrieved userInfo:", userInfo);
+  
+      if (!userInfo) {
+        alert("User not logged in. Please log in again.");
+        return;
+      }
+  
+      const parsedInfo = JSON.parse(userInfo);
+      const username = parsedInfo?.user?.username || parsedInfo?.user?.userName;
+ // ✅ Correct key
+
+    const response = await fetch(`${API_URL}/transactions/${username}`);
+    if (!response.ok) throw new Error("Failed to fetch transactions");
+
+    const data = await response.json();
+    const incomeTransactions = data.transactions.filter(
+      (transaction) => transaction.type === "Income"
+    );
+    setTransactions(incomeTransactions); // Fix: Access transactions from response
+  } catch (error) {
+    console.error(error);
+    alert("Error fetching transactions");
+  }
+};
+
+// ➕ Add Transaction
+const addTransaction = async () => {
+  try {
+    const userInfo = await AsyncStorage.getItem("userInfo");
+      console.log("📦 Retrieved userInfo:", userInfo);
+  
+      if (!userInfo) {
+        alert("User not logged in. Please log in again.");
+        return;
+      }
+  
+      const parsedInfo = JSON.parse(userInfo);
+      const username = parsedInfo?.user?.username || parsedInfo?.user?.userName;
+      // ✅ Correct key
+
     const expenseName = isCustomExpense ? customExpenseName : newTransaction.name;
 
     if (!expenseName || !newTransaction.amount || !newTransaction.method || !newTransaction.date) {
@@ -60,50 +96,68 @@ export default function ExpenseTracker() {
     const transactionData = {
       name: expenseName,
       amount: parseFloat(newTransaction.amount),
-      type: "Income",
+      type: newTransaction.type,
       subType: newTransaction.subType,
       method: newTransaction.method,
       date: newTransaction.date,
     };
 
-    try {
-      const response = await fetch(`${API_URL}/transactions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(transactionData),
-      });
+    const response = await fetch(`${API_URL}/transactions/${username}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(transactionData),
+    });
 
-      if (!response.ok) throw new Error("Failed to add transaction");
-
-      const savedTransaction = await response.json();
-      setTransactions([...transactions, savedTransaction.transaction]);
-      alert("Transaction added successfully");
-    } catch (error) {
-      console.error(error);
-      alert("Error adding transaction");
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to add transaction");
     }
 
+    const savedTransaction = await response.json();
+    setTransactions([...transactions, savedTransaction.transaction]); // Update UI
+    alert("Transaction added successfully");
+
+    // Reset State
     setNewTransaction({ name: "", amount: "", type: "Income", subType: "Active", method: "Cash", date: "" });
     setCustomExpenseName("");
     setIsCustomExpense(false);
     setModalVisible(false);
-  };
+  } catch (error) {
+    console.error(error);
+    alert("Error adding transaction");
+  }
+};
 
-  const deleteTransaction = async (id) => {
-    try {
-      const response = await fetch(`${API_URL}/transactions/${id}`, {
-        method: "DELETE",
-      });
+// ❌ Delete Transaction
+const deleteTransaction = async (id) => {
+  try {
+    const userInfo = await AsyncStorage.getItem("userInfo");
+    console.log("📦 Retrieved userInfo:", userInfo);
 
-      if (!response.ok) throw new Error("Failed to delete transaction");
-
-      setTransactions(transactions.filter((transaction) => transaction._id !== id));
-      alert("Transaction deleted successfully");
-    } catch (error) {
-      console.error(error);
-      alert("Error deleting transaction");
+    if (!userInfo) {
+      alert("User not logged in. Please log in again.");
+      return;
     }
-  };
+
+    const parsedInfo = JSON.parse(userInfo);
+    const username = parsedInfo?.user?.username || parsedInfo?.user?.userName;
+
+    const response = await fetch(`${API_URL}/transactions/${username}/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to delete transaction");
+    }
+
+    setTransactions(transactions.filter((transaction) => transaction._id !== id));
+    alert("Transaction deleted successfully");
+  } catch (error) {
+    console.error(error);
+    alert("Error deleting transaction");
+  }
+};
 
   const filteredTransactions =
     filter === "all"
@@ -132,7 +186,8 @@ export default function ExpenseTracker() {
       {/* Transactions List */}
       <FlatList
         data={filteredTransactions}
-        keyExtractor={(item) => item._id.toString()}
+        keyExtractor={(item) => (item?._id ? item._id.toString() : Math.random().toString())}
+
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View>

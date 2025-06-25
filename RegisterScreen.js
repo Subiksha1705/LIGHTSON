@@ -16,8 +16,8 @@ export default function RegisterScreenView() {
     password: "",
     confirmPassword: "",
     country: "",
-    retirementAge: "",
     age: "",
+    retirementAge: "",
     phoneNumber: "",
   });
 
@@ -29,15 +29,15 @@ export default function RegisterScreenView() {
     password: false,
     confirmPassword: false,
     country: false,
-    retirementAge: false,
     age: false,
+    retirementAge: false,
     phoneNumber: false,
   });
 
   const [errorMessages, setErrorMessages] = useState({});
   const [showPassword, setShowPassword] = useState(false);
 
-  const NGROK_URL = "https://bb50-2409-40f4-301f-ffe3-7d02-6711-ac9c-fb39.ngrok-free.app";
+ const NGROK_URL = `${process.env.REACT_APP_API_BASE_URL}/api/`;
 
   const validatePassword = (value) => {
     const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
@@ -103,12 +103,6 @@ export default function RegisterScreenView() {
         }
         break;
 
-      case "phoneNumber":
-        const phoneRegex = /^[0-9]{10}$/;
-        isValid = phoneRegex.test(value);
-        errorMessage = isValid ? "" : "Enter a valid 10-digit phone number";
-        break;
-
       case "retirementAge":
         const retirementAgeValue = parseInt(value);
         const currentAge = parseInt(formData.age);
@@ -119,6 +113,12 @@ export default function RegisterScreenView() {
         } else {
           errorMessage = "Retirement age must be greater than your current age";
         }
+        break;
+
+      case "phoneNumber":
+        const phoneRegex = /^[0-9]{10}$/;
+        isValid = phoneRegex.test(value);
+        errorMessage = isValid ? "" : "Enter a valid 10-digit phone number";
         break;
 
       case "country":
@@ -157,7 +157,6 @@ export default function RegisterScreenView() {
       console.error(error);
       Alert.alert("Error", "Registration Failed!");
     }
-
   };
 
   return (
@@ -169,31 +168,38 @@ export default function RegisterScreenView() {
 
         {/* Form Inputs */}
         {Object.keys(formData).map((field) => (
-          <View key={field} style={{ width: "100%" }}>
-            {field === "country" ? (
-              <Picker
-                selectedValue={formData.country}
-                onValueChange={(value) => handleChange(field, value)}
-                style={styles.picker}
-              >
-                <Picker.Item label="Select Country" value="" />
-                <Picker.Item label="India" value="India" />
-                <Picker.Item label="USA" value="USA" />
-                <Picker.Item label="UK" value="UK" />
-                <Picker.Item label="Canada" value="Canada" />
-              </Picker>
-            ) : (
-              <TextInput
-                placeholder={field === "userName" ? "Username" : field.charAt(0).toUpperCase() + field.slice(1)}
-                secureTextEntry={field.toLowerCase().includes("password") && !showPassword}
-                style={styles.input}
-                onChangeText={(text) => handleChange(field, text)}
-                keyboardType={["age", "phoneNumber", "retirementAge"].includes(field) ? "numeric" : "default"}
-              />
-            )}
-            {errorMessages[field] ? <Text style={styles.errorText}>{errorMessages[field]}</Text> : null}
-          </View>
-        ))}
+  <View key={field} style={{ width: "100%" }}>
+    {field === "country" ? (
+      <Picker
+        selectedValue={formData.country}
+        onValueChange={(value) => handleChange(field, value)}
+        style={styles.picker}
+      >
+        <Picker.Item label="Select Country" value="" />
+        <Picker.Item label="India" value="India" />
+        <Picker.Item label="USA" value="USA" />
+        <Picker.Item label="UK" value="UK" />
+        <Picker.Item label="Canada" value="Canada" />
+      </Picker>
+    ) : (
+      <View style={field.toLowerCase().includes("password") ? styles.passwordContainer : null}>
+        <TextInput
+          placeholder={field === "userName" ? "Username" : field.charAt(0).toUpperCase() + field.slice(1)}
+          secureTextEntry={field.toLowerCase().includes("password") && !showPassword}
+          style={[styles.input, field.toLowerCase().includes("password") ? styles.passwordInput : null]}
+          onChangeText={(text) => handleChange(field, text)}
+          keyboardType={["age", "phoneNumber", "retirementAge"].includes(field) ? "numeric" : "default"}
+        />
+        {field.toLowerCase().includes("password") && (
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+            <FontAwesome name={showPassword ? "eye-slash" : "eye"} size={20} color="#888" />
+          </TouchableOpacity>
+        )}
+      </View>
+    )}
+    {errorMessages[field] ? <Text style={styles.errorText}>{errorMessages[field]}</Text> : null}
+  </View>
+))}
 
         {/* Submit Button */}
         <TouchableOpacity style={styles.button} onPress={handleSubmit}>
@@ -250,6 +256,21 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     width: "100%",
     alignItems: "center",
+  },
+  passwordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    
+    marginBottom: 0,
+    width: "100%",
+     // Add padding for the eye icon
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 10,
+  },
+  eyeIcon: {
+    padding: 5,
   },
   buttonText: {
     color: "#fff",

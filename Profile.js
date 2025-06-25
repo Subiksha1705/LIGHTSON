@@ -1,91 +1,168 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
 const ProfilePage = ({ navigation }) => {
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // 🌐 Fetch profile from backend
+  const fetchProfile = async () => {
+    try {
+      const userInfo = await AsyncStorage.getItem("userInfo");
+      if (!userInfo) {
+        alert("User not logged in. Please log in again.");
+        navigation.replace("Login"); // Redirect to login page
+        return;
+      }
+
+      const parsedInfo = JSON.parse(userInfo);
+      if (!parsedInfo?.user?.username && !parsedInfo?.user?.userName) {
+        alert("Invalid user data. Please log in again.");
+        navigation.replace("Login");
+        return;
+      }
+
+      const username = parsedInfo.user.username || parsedInfo.user.userName;
+     const apiUrl = `${process.env.REACT_APP_API_URL}/profile/${username}`;
+
+      console.log(`Fetching profile for: ${username}`);
+      const response = await axios.get(apiUrl);
+      setProfile(response.data);
+    } catch (err) {
+      console.error("❌ Error fetching profile:", err);
+      setError("Failed to load profile. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  // 🔒 Sign-out function
+  const handleSignOut = async () => {
+    try {
+      await AsyncStorage.removeItem("userInfo");
+      alert("Signed out successfully!");
+      navigation.replace("Login"); // Redirect to login screen
+    } catch (err) {
+      console.error("❌ Error signing out:", err);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4CAF50" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
+
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.profileHeader}>
-        <Image 
-          source={{ uri: 'https://www.example.com/profile-picture.jpg' }} // Replace with a real image URL
-          style={styles.profileImage}
-        />
-        <Text style={styles.name}>John Doe</Text>
-        <Text style={styles.bio}>Software Developer | Tech Enthusiast | Traveller</Text>
-      </View>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.header}>👤 Profile Information</Text>
+      <ProfileDetail label="First Name" value={profile.firstName} />
+      <ProfileDetail label="Last Name" value={profile.lastName} />
+      <ProfileDetail label="Username" value={profile.userName} />
+      <ProfileDetail label="Email" value={profile.email} />
+      <ProfileDetail label="Age" value={profile.age?.toString()} />
+      <ProfileDetail
+        label="Retirement Age"
+        value={profile.retirementAge?.toString()}
+      />
+      <ProfileDetail label="Phone Number" value={profile.phoneNumber} />
+      <ProfileDetail label="Country" value={profile.country} />
 
-      <View style={styles.contactInfo}>
-        <Text style={styles.contactTitle}>Contact Information</Text>
-        <Text style={styles.contactText}>Email: johndoe@example.com</Text>
-        <Text style={styles.contactText}>Phone: (123) 456-7890</Text>
-        <Text style={styles.contactText}>Location: New York, USA</Text>
-      </View>
-
-      {/* Button to redirect to Premium */}
-      <TouchableOpacity style={styles.premiumButton} onPress={() => navigation.navigate('Premium')}>
-        <Text style={styles.premiumButtonText}>Go Premium</Text>
+      {/* 🚪 Sign-out Button */}
+      <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+        <Text style={styles.signOutText}>Sign Out</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 };
 
+// 📌 Profile Detail Component
+const ProfileDetail = ({ label, value }) => (
+  <View style={styles.detailContainer}>
+    <Text style={styles.label}>{label}</Text>
+    <Text style={styles.value}>{value || "N/A"}</Text>
+  </View>
+);
+
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 20,
-    backgroundColor: '#f7f7f7',
+    backgroundColor: "#F5F5F5",
+    flexGrow: 1,
   },
-  profileHeader: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    marginBottom: 10,
-  },
-  name: {
+  header: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  bio: {
-    fontSize: 16,
-    color: '#777',
-  },
-  contactInfo: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 3,
+    fontWeight: "bold",
     marginBottom: 20,
+    color: "#333",
+    textAlign: "center",
   },
-  contactTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333',
-  },
-  contactText: {
-    fontSize: 16,
-    color: '#555',
-    marginBottom: 5,
-  },
-  premiumButton: {
-    backgroundColor: '#007AFF',
+  detailContainer: {
+    marginBottom: 15,
     padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
+    backgroundColor: "#FFF",
+    borderRadius: 10,
+    elevation: 3,
   },
-  premiumButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+  label: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#4CAF50",
+  },
+  value: {
+    fontSize: 16,
+    marginTop: 5,
+    color: "#333",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorText: {
+    color: "red",
+    fontSize: 16,
+  },
+  signOutButton: {
+    marginTop: 20,
+    backgroundColor: "#FF3B30",
+    padding: 12,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  signOutText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
 

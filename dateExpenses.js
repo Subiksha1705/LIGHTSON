@@ -13,7 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AntDesign } from "@expo/vector-icons";
 import { Picker } from "@react-native-picker/picker";
 
-const API_URL = "https://bb50-2409-40f4-301f-ffe3-7d02-6711-ac9c-fb39.ngrok-free.app";
+const API_URL = process.env.REACT_APP_API_URL;
 
 const formatDate = (dateString) => {
   const [year, month, day] = dateString.split("-");
@@ -37,115 +37,158 @@ const TransactionsPage = ({ route }) => {
   useEffect(() => {
     fetchTransactions();
   }, [selectedDate]);
-
-  // Fetch Transactions
   const fetchTransactions = async () => {
     try {
       const userInfo = await AsyncStorage.getItem("userInfo");
+      console.log("📦 Retrieved userInfo:", userInfo);
+  
       if (!userInfo) {
         alert("User not logged in. Please log in again.");
         return;
       }
+  
       const parsedInfo = JSON.parse(userInfo);
-      const username = parsedInfo.userName;
+      const username = parsedInfo?.user?.username || parsedInfo?.user?.userName;
 
+  
+      if (!username) {
+        alert("Username not found. Please log in again.");
+        return;
+      }
+  
+      console.log("✅ Username:", username);
+  
       const response = await fetch(`${API_URL}/transactions/${username}`);
       const data = await response.json();
-
-      // Filter transactions by selected date
-      const filteredData = data.filter(
-        (transaction) => transaction.date === selectedDate
-      );
-      setTransactions(filteredData);
+  
+      console.log("Fetched Transactions Data:", data);
+  
+      if (!response.ok) {
+        alert(data.error || "Error fetching transactions.");
+        return;
+      }
+  
+      if (data.transactions && Array.isArray(data.transactions)) {
+        const filteredData = data.transactions.filter(
+          (transaction) => transaction.date === selectedDate
+        );
+        setTransactions(filteredData);
+      } else {
+        console.error("❌ Invalid data format received:", data);
+        setTransactions([]);
+      }
     } catch (error) {
       console.error("Error fetching transactions:", error);
     }
   };
-
+  
   // Add Transaction
-  const addTransaction = async () => {
-    if (
-      !newTransaction.name ||
-      !newTransaction.amount ||
-      !newTransaction.type ||
-      !newTransaction.method
-    ) {
-      alert("Please fill out all fields.");
+const addTransaction = async () => {
+  if (
+    !newTransaction.name ||
+    !newTransaction.amount ||
+    !newTransaction.type ||
+    !newTransaction.method
+  ) {
+    alert("Please fill out all fields.");
+    return;
+  }
+
+  try {
+    const userInfo = await AsyncStorage.getItem("userInfo");
+    if (!userInfo) {
+      alert("User not logged in. Please log in again.");
       return;
     }
+    const parsedInfo = JSON.parse(userInfo);
+    const username = parsedInfo?.user?.username || parsedInfo?.user?.userName;
 
-    try {
-      const userInfo = await AsyncStorage.getItem("userInfo");
-      if (!userInfo) {
-        alert("User not logged in. Please log in again.");
-        return;
-      }
-      const parsedInfo = JSON.parse(userInfo);
-      console.log(userInfo);
-      const username = parsedInfo.username;
+    const response = await fetch(`${API_URL}/transactions/${username}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newTransaction),
+    });
 
-   
-      const response = await fetch(`${API_URL}/transactions/${username}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newTransaction),
+    const result = await response.json();
+
+    // Debugging: Check response from API
+    console.log("Add Transaction Response:", result);
+
+    if (response.ok) {
+      // Refresh transactions after adding
+      fetchTransactions();
+      setNewTransaction({
+        name: "",
+        amount: "",
+        type: "",
+        subType: "",
+        method: "",
+        date: selectedDate,
       });
-       
-      const result = await response.json();
-
-      if (response.ok) {
-        setTransactions([...transactions, result.transaction]);
-        setNewTransaction({
-          name: "",
-          amount: "",
-          type: "",
-          subType: "",
-          method: "",
-          date: selectedDate,
-        });
-        setModalVisible(false);
-      } else {
-        alert(result.error || "Error adding transaction.");
-      }
-    } catch (error) {
-      console.error("Error adding transaction:", error);
-      alert("Error adding transaction. Please try again.");
+      setModalVisible(false);
+    } else {
+      alert(result.error || "Error adding transaction.");
     }
-  };
+  } catch (error) {
+    console.error("Error adding transaction:", error);
+    alert("Error adding transaction. Please try again.");
+  }
+};
+
 
   // Delete Transaction
   const deleteTransaction = async (id) => {
-    Alert.alert("Delete Transaction", "Are you sure you want to delete this transaction?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        onPress: async () => {
-          try {
-            const userInfo = await AsyncStorage.getItem("userInfo");
-            if (!userInfo) {
-              alert("User not logged in. Please log in again.");
-              return;
-            }
-            const parsedInfo = JSON.parse(userInfo);
-            const username = parsedInfo.userName;
+    Alert.alert(
+      "Delete Transaction",
+      "Are you sure you want to delete this transaction?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          onPress: async () => {
+            try {
+              const userInfo = await AsyncStorage.getItem("userInfo");
+              if (!userInfo) {
+                alert("User not logged in. Please log in again.");
+                return;
+              }
+  
+              const parsedInfo = JSON.parse(userInfo);
+              const username = parsedInfo?.user?.username || parsedInfo?.user?.userName;
 
-            const response = await fetch(`${API_URL}/transactions/${username}/${id}`, {
-              method: "DELETE",
-            });
-
-            if (response.ok) {
-              setTransactions(transactions.filter((transaction) => transaction._id !== id));
-            } else {
-              alert("Error deleting transaction.");
+  
+              if (!username) {
+                alert("Username not found. Please log in again.");
+                return;
+              }
+  
+              const url = `${API_URL}/transactions/${username}/${id}`;
+              console.log(`🔗 DELETE URL: ${url}`);
+  
+              const response = await fetch(url, {
+                method: "DELETE",
+              });
+  
+              const result = await response.json();
+              console.log("📝 Delete response:", result);
+  
+              if (response.ok && result.success) {
+                setTransactions(transactions.filter((transaction) => transaction._id !== id));
+                alert("Transaction deleted successfully.");
+              } else {
+                alert(result.error || "Error deleting transaction.");
+              }
+            } catch (error) {
+              console.error("❌ Error deleting transaction:", error);
+              alert("An error occurred while deleting the transaction.");
             }
-          } catch (error) {
-            console.error("Error deleting transaction:", error);
-          }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
-
+  
+  
   // Filter Transactions
   const filteredTransactions = transactions.filter(
     (transaction) => filter === "All" || transaction.type === filter
@@ -173,30 +216,32 @@ const TransactionsPage = ({ route }) => {
       {/* Transaction List */}
       <FlatList
         data={filteredTransactions}
-        keyExtractor={(item) => item._id}
+        keyExtractor={(item, index) => (item && item._id ? item._id : index.toString())}
         renderItem={({ item }) => (
-          <View style={styles.transactionItem}>
-            <Text style={styles.transactionName}>{item.name}</Text>
-            <Text style={styles.transactionDetails}>
-              {item.method} - {formatDate(item.date)}
-            </Text>
-            <View style={styles.transactionActions}>
-              <Text
-                style={
-                  item.type === "Income"
-                    ? styles.transactionAmountPositive
-                    : item.type === "Expense"
-                    ? styles.transactionAmountNegative
-                    : styles.transactionAmountInvestment
-                }
-              >
-                {item.type === "Expense" ? `-₹${item.amount}` : `₹${item.amount}`}
+          item ? (
+            <View style={styles.transactionItem}>
+              <Text style={styles.transactionName}>{item.name}</Text>
+              <Text style={styles.transactionDetails}>
+                {item.method} - {formatDate(item.date)}
               </Text>
-              <TouchableOpacity onPress={() => deleteTransaction(item._id)}>
-                <Text style={styles.deleteButton}>Delete</Text>
-              </TouchableOpacity>
+              <View style={styles.transactionActions}>
+                <Text
+                  style={
+                    item.type === "Income"
+                      ? styles.transactionAmountPositive
+                      : item.type === "Expense"
+                      ? styles.transactionAmountNegative
+                      : styles.transactionAmountInvestment
+                  }
+                >
+                  {item.type === "Expense" ? `-₹${item.amount}` : `₹${item.amount}`}
+                </Text>
+                <TouchableOpacity onPress={() => deleteTransaction(item._id)}>
+                  <Text style={styles.deleteButton}>Delete</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
+          ) : null
         )}
       />
 
@@ -310,150 +355,38 @@ const TransactionsPage = ({ route }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f4f4f4",
-    padding: 16,
-  },
-  header: {
-    fontSize: 22,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  dateText: {
-    fontSize: 18,
-    fontWeight: "normal",
-    color: "#666",
-  },
-  filterContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    marginVertical: 10,
-  },
-  filterButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    backgroundColor: "#888",
-  },
-  activeFilter: {
-    backgroundColor: "#007AFF",
-  },
-  whiteText: {
-    color: "white",
-    fontWeight: "bold",
-  },
-  transactionItem: {
-    backgroundColor: "white",
-    padding: 16,
-    borderRadius: 8,
-    marginVertical: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  transactionName: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  transactionDetails: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 4,
-  },
-  transactionActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 8,
-  },
-  transactionAmountPositive: {
-    color: "green",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  transactionAmountNegative: {
-    color: "red",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  transactionAmountInvestment: {
-    color: "#007AFF",
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  deleteButton: {
-    color: "red",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
+  container: { flex: 1, backgroundColor: "#f8f9fa" },
+  header: { fontSize: 22, fontWeight: "bold", margin: 10 },
+  dateText: { fontSize: 18, color: "#555" },
+  filterContainer: { flexDirection: "row", justifyContent: "space-around", margin: 10 },
+  filterButton: { padding: 10, backgroundColor: "#6c757d", borderRadius: 8 },
+  activeFilter: { backgroundColor: "#4caf50" },
+  whiteText: { color: "white", fontWeight: "bold" },
+  transactionItem: { backgroundColor: "white", padding: 15, marginVertical: 5, borderRadius: 8 },
+  transactionName: { fontSize: 16, fontWeight: "bold" },
+  transactionDetails: { fontSize: 12, color: "#6c757d" },
+  transactionActions: { flexDirection: "row", justifyContent: "space-between", marginTop: 8 },
+  transactionAmountPositive: { color: "green", fontWeight: "bold" },
+  transactionAmountNegative: { color: "red", fontWeight: "bold" },
+  transactionAmountInvestment: { color: "blue", fontWeight: "bold" },
+  deleteButton: { color: "red", fontWeight: "bold" },
   addTransactionButton: {
     position: "absolute",
     bottom: 20,
     right: 20,
-    backgroundColor: "#007AFF",
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "#28a745",
+    padding: 12,
+    borderRadius: 50,
+    elevation: 5,
   },
-
-  // Modal Styles
-  modalContainer: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    width: "90%",
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 20,
-    elevation: 10,
-    shadowColor: "#000",
-  },
-  modalHeader: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 12,
-    textAlign: "center",
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 10,
-    borderRadius: 8,
-    marginVertical: 8,
-  },
-  addButton: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginVertical: 8,
-  },
-  addButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  cancelButton: {
-    backgroundColor: "#FF3B30",
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginVertical: 8,
-  },
-  cancelButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
+  modalContainer: { flex: 1, justifyContent: "center", backgroundColor: "rgba(0,0,0,0.5)" },
+  modalContent: { backgroundColor: "white", padding: 20, borderRadius: 10, margin: 20 },
+  modalHeader: { fontSize: 20, fontWeight: "bold", marginBottom: 10 },
+  input: { borderWidth: 1, borderColor: "#ccc", padding: 10, marginVertical: 5, borderRadius: 8 },
+  addButton: { backgroundColor: "#28a745", padding: 12, borderRadius: 8, marginTop: 10 },
+  addButtonText: { color: "white", textAlign: "center", fontWeight: "bold" },
+  cancelButton: { backgroundColor: "#dc3545", padding: 12, borderRadius: 8, marginTop: 10 },
+  cancelButtonText: { color: "white", textAlign: "center", fontWeight: "bold" },
 });
 
 export default TransactionsPage;

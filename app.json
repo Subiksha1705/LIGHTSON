@@ -19,10 +19,17 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.subiksha17.Ligths"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "15dd99f8-6ca1-468a-a724-d9d0575d6c3e"
+      }
+    },
+    "owner": "subiksha17"
   }
 }

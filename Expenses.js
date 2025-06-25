@@ -10,8 +10,10 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const API_URL = "https://bb50-2409-40f4-301f-ffe3-7d02-6711-ac9c-fb39.ngrok-free.app";
+
+const API_URL = process.env.REACT_APP_API_URL;
 
 export default function ExpenseTracker() {
   const [transactions, setTransactions] = useState([]);
@@ -29,18 +31,34 @@ export default function ExpenseTracker() {
   const [customExpenseName, setCustomExpenseName] = useState("");
 
   const expenseTypeOptions = {
-    Mandatory: ["Rent", "Utilities", "Insurance"],
-    Discretionary: ["Entertainment", "Dining", "Shopping"],
-    Essential: ["Groceries", "Transport", "Healthcare"],
+    Mandatory: ["EMI - Education", "EMI - Personal", "EMI - Property", "EMI - Vehicle", "Fees & Charges - Consultation", "Insurance - Fire", "Insurance - Health", "Insurance - Life (Term / Pension / Moneyback)", "Insurance - Property", "Insurance - Travel", "Insurance - Vehicle", "Loan Repayment", "PPF/VPF - Retirement fund", "Tax - Income", "Tax - utilities"],
+    Discretionary: ["Charitable donations", "Fun / Entertainment", "Food Dining", "Gifts", "Home Décor", "Luxury clothing / Jewelery", "Sports items", "Subscriptions / dues", "Tours & travel", "Vehicle Purchase"],
+    Essential: ["Child care", "Clothing", "Education", "Emergency Fund", "Fuel - Cooking", "Fuel - Vehicles", "Groceries", "Home care", "Medical Care", "Miscellaneous", "Personal grooming", "Pet care", "Rents / Mortgage", "Transportation", "Utilities - Electricity", "Utilities - Gas", "Utilities - Phone(s)", "Utilities - TV / Internet", "Utilities - Water", "Utilities Maintenance cost", "Vehicle Maintenance cost"]
   };
 
   // ✅ Fetch Transactions from MongoDB
   const fetchTransactions = async () => {
     try {
+      const userInfo = await AsyncStorage.getItem("userInfo");
+        //console.log("📦 Retrieved userInfo:", userInfo);
+    
+        if (!userInfo) {
+          alert("User not logged in. Please log in again.");
+          return;
+        }
+    
+        const parsedInfo = JSON.parse(userInfo);
+        const username = parsedInfo?.user?.username || parsedInfo?.user?.userName;
+
+  
       const response = await fetch(`${API_URL}/transactions/${username}`);
       if (!response.ok) throw new Error("Failed to fetch transactions");
+  
       const data = await response.json();
-      setTransactions(data);
+      const incomeTransactions = data.transactions.filter(
+        (transaction) => transaction.type === "Expense"
+      );
+      setTransactions(incomeTransactions); 
     } catch (error) {
       console.error(error);
       alert("Error fetching transactions");
@@ -53,54 +71,85 @@ export default function ExpenseTracker() {
 
   // ✅ Add Transaction to MongoDB
   const addTransaction = async () => {
-    const expenseName = isCustomExpense ? customExpenseName : newTransaction.name;
-
-    if (!expenseName || !newTransaction.amount || !newTransaction.type || !newTransaction.method || !newTransaction.date) {
-      alert("Please fill all fields");
-      return;
-    }
-
-    const transactionData = {
-      name: expenseName,
-      amount: parseFloat(newTransaction.amount),
-      type: "Expense",
-      subType: newTransaction.subType,
-      method: newTransaction.method,
-      date: newTransaction.date,
-    };
-
     try {
-      const response = await fetch(`${API_URL}/transactions`, {
+      const userInfo = await AsyncStorage.getItem("userInfo");
+      //console.log("📦 Retrieved userInfo:", userInfo);
+  
+      if (!userInfo) {
+        alert("User not logged in. Please log in again.");
+        return;
+      }
+  
+      const parsedInfo = JSON.parse(userInfo);
+      const username = parsedInfo?.user?.username || parsedInfo?.user?.userName;
+
+  
+      const expenseName = isCustomExpense ? customExpenseName : newTransaction.name;
+  
+      if (!expenseName || !newTransaction.amount || !newTransaction.method || !newTransaction.date) {
+        alert("Please fill all fields");
+        return;
+      }
+  
+      const transactionData = {
+        name: expenseName,
+        amount: parseFloat(newTransaction.amount),
+        type: "Expense", // Keeping it as Expense since you only need Expenses here
+        subType: newTransaction.subType,
+        method: newTransaction.method,
+        date: newTransaction.date,
+      };
+  
+      const response = await fetch(`${API_URL}/transactions/${username}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(transactionData),
       });
-
-      if (!response.ok) throw new Error("Failed to add transaction");
-
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to add transaction");
+      }
+  
       const savedTransaction = await response.json();
-      setTransactions([...transactions, savedTransaction.transaction]);
+      setTransactions([...transactions, savedTransaction.transaction]); // ✅ Update UI
       alert("Transaction added successfully");
+  
+      // Reset state after adding
+      setNewTransaction({ name: "", amount: "", type: "Expense", subType: "Essential", method: "Cash", date: "" });
+      setCustomExpenseName("");
+      setIsCustomExpense(false);
+      setModalVisible(false);
     } catch (error) {
       console.error(error);
       alert("Error adding transaction");
     }
-
-    setNewTransaction({ name: "", amount: "", type: "Expense", subType: "Essential", method: "Cash", date: "" });
-    setCustomExpenseName("");
-    setIsCustomExpense(false);
-    setModalVisible(false);
   };
+  
 
   // ✅ Delete Transaction from MongoDB
   const deleteTransaction = async (id) => {
     try {
-      const response = await fetch(`${API_URL}/transactions/${id}`, {
+      const userInfo = await AsyncStorage.getItem("userInfo");
+     // console.log("📦 Retrieved userInfo:", userInfo);
+  
+      if (!userInfo) {
+        alert("User not logged in. Please log in again.");
+        return;
+      }
+  
+      const parsedInfo = JSON.parse(userInfo);
+      const username = parsedInfo?.user?.username || parsedInfo?.user?.userName; // ✅ Correct key
+  
+      const response = await fetch(`${API_URL}/transactions/${username}/${id}`, {
         method: "DELETE",
       });
-
-      if (!response.ok) throw new Error("Failed to delete transaction");
-
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to delete transaction");
+      }
+  
       setTransactions(transactions.filter((transaction) => transaction._id !== id));
       alert("Transaction deleted successfully");
     } catch (error) {
@@ -108,7 +157,7 @@ export default function ExpenseTracker() {
       alert("Error deleting transaction");
     }
   };
-
+  
   const filteredTransactions =
     filter === "all"
       ? transactions
@@ -136,7 +185,8 @@ export default function ExpenseTracker() {
       {/* Transactions List */}
       <FlatList
         data={filteredTransactions}
-        keyExtractor={(item) => item._id.toString()}
+        keyExtractor={(item) => (item?._id ? item._id.toString() : Math.random().toString())}
+
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View>

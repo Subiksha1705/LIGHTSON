@@ -17,27 +17,11 @@ const Splash = require("./assets/splash.png");
 
 export default function SplashScreen() {
   const navigation = useNavigation();
-  const [loading, setLoading] = useState(true);
-  const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(false);
+
 
   // Replace with your ngrok URL
-  const API_URL = "https://bb50-2409-40f4-301f-ffe3-7d02-6711-ac9c-fb39.ngrok-free.app";
-  useEffect(() => {
-    fetchTransactions();
-  }, []);
-
-  const fetchTransactions = async () => {
-    try {
-      const response = await fetch(API_URL);
-      const data = await response.json();
-      setTransactions(data);
-    } catch (error) {
-      console.error("Error fetching transactions:", error);
-      Alert.alert("Error", "Failed to load transactions.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   return (
     <View style={styles.container}>

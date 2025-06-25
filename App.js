@@ -70,14 +70,7 @@ const headerOptions = (title) => ({
         style={[styles.logo, { width: 130, height: 50 }]} // Increased size
       />
       <View style={styles.fireTextContainer}>
-        <Text>
-          <Text style={[styles.fireLetter, { fontSize: 18, color: '#FF5733' }]}>F.</Text>
-          <Text style={[styles.fireLetter, { fontSize: 18, color: '#FFC300' }]}>I.</Text>
-          <Text style={[styles.fireLetter, { fontSize: 18, color: 'brown' }]}>R.</Text>
-          <Text style={[styles.fireLetter, { fontSize: 18, color: '#33C3FF' }]}>E.</Text>
-          <Text style={styles.numberText}>  </Text>
-          <Text style={[styles.fireLetter, { fontSize: 23, color: 'black' }]}>₹95,65,432</Text>
-        </Text>
+        
       </View>
     </View>
   ),
